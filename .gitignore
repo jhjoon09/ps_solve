@@ -1,3 +1,19 @@
+<<<<<<< Updated upstream
+=======
+# Created by https://www.toptal.com/developers/gitignore/api/windows,linux,macos,vim,visualstudiocode,c++,c
+# Edit at https://www.toptal.com/developers/gitignore?templates=windows,linux,macos,vim,visualstudiocode,c++,c
+
+#ignore all
+*
+
+#unignore extentions
+!*.*
+
+#unignore directory
+!*/
+
+### C ###
+>>>>>>> Stashed changes
 # Prerequisites
 *.d
 

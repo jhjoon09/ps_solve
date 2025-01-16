@@ -1,62 +1,67 @@
 #include <iostream>
+#include <queue>
+
 #define INF 987654321
 
 using namespace std;
 
-int n,m,k;
+int N,M,K;
 int board[1000][1000];
-int dp[1000][1000][11];
+bool visit[1000][1000][11];
 
-int move(int y, int x, int b, int c){
-	if(y < 0 || y >= n || x < 0 || x >= m)
-		return -1;
+int dx[4] = {-1, 1, 0, 0};
+int dy[4] = {0, 0, -1, 1};
 
-	if(board[y][x] == 1)
-		++b;
+int solve(){
+	queue<pair<pair<int,int>, pair<int,int>>> Q;
+	Q.push(make_pair(make_pair(0,0), make_pair(1,0)));
 
-	if(b > k)
-		return -1;
+	while(!Q.empty()){
+		pair<int,int> pos = Q.front().first;
+		int cnt = Q.front().second.first;
+		int bc = Q.front().second.second;
 
-	if(dp[y][x][b] <= c)
-		return 1;
+		Q.pop();
 
-	for(int i = b; i <= k; ++i)
-		dp[y][x][i] = dp[y][x][i] > c ? c : dp[y][x][i];
+		if(pos.first == N-1 && pos.second == M-1)
+			return cnt;
 
-	++c;
+		if(pos.first < 0 || pos.first >= N || pos.second < 0 || pos.second >= M)
+			continue;
 
-	move(y+1,x,b,c);
-	move(y-1,x,b,c);
-	move(y,x+1,b,c);
-	move(y,x-1,b,c);
+		if(board[pos.first][pos.second] == 1)
+			++bc;
 
-	return 0;
+		if(bc > K)
+			continue;
+
+		if(visit[pos.first][pos.second][bc] == true)
+			continue;
+
+		visit[pos.first][pos.second][bc] = true;
+
+		++cnt;
+		
+
+		for(int i = 0; i < 4; ++i)
+			Q.push(make_pair(make_pair(pos.first + dx[i], pos.second + dy[i]), make_pair(cnt, bc)));
+	}
+
+	return -1;
 }
 
 int main(void){
-	cin >> n >> m >> k;
+	cin >> N >> M >> K;
 
-	for(int i = 0; i < n; ++i){
-		for(int j = 0; j < m; ++j){
+	for(int i = 0; i < N; ++i){
+		for(int j = 0; j < M; ++j){
 			char temp;
 			cin >> temp;
 			board[i][j] = temp == '0' ? 0 : 1;
 		}
 	}
 
-	for(int i = 0; i < n; ++i){
-		for(int j = 0; j < m; ++j){
-			for(int x = 0; x <= k; ++x)
-				dp[i][j][x] = INF;
-		}
-	}
-
-	move(0,0,0,1);
-
-	int ret = dp[n-1][m-1][k];
-
-	ret = ret == INF ? -1 : ret;
-	cout << ret << endl;
+	cout << solve() << endl;	
 
 	return 0;
 }

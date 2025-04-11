@@ -1,192 +1,169 @@
 #include <iostream>
 #include <queue>
-#include <vector>
-
-#define INF 987654321
+#include <algorithm>
 
 using namespace std;
 
-struct Trip{
-	int id;
-	int revenue;
-	int dest;
-	int benefit;
+int Board[5][5];
+queue<int> q;
+int dx[] = {0, 0, -1, 1};
+int dy[] = {1, -1, 0, 0};
 
-	bool operator<(const Trip t) const{
-		if(this->benefit  == t.benefit)
-			return this->id > t.id;
+int bfs(int board[5][5]){
+	int ret = 0;
+	int visit[5][5] = {0, };
 
-		return (this->benefit < t.benefit);
-	}
-};
-
-
-priority_queue<Trip> pq;
-int cost[2000][2000];
-int lst[30001];
-int N,M;
-int S;
-
-struct cmp{
-	bool operator()(pair<int,int> a, pair<int,int> b){
-		if(a.second == b.second)
-			return a.second > b.second;
-
-		return a.second > b.second;
-	}
-};
-
-int cal_cost(int s){
-	priority_queue<pair<int,int>, vector<pair<int,int>>, cmp> pq;
-	int visit[2000] = {0, };
-	visit[s] = 1;
-
-	for(int i = 0; i < N; ++i){
-		if(i == s)
-			continue;
-		if(cost[s][i] == INF)
-			continue;
-
-		pq.push({i, cost[s][i]});
-	}
-
-	while(!pq.empty()){
-		pair<int,int> temp = pq.top();
-		pq.pop();
-
-		if(visit[temp.first] == 1)
-			continue;
-
-		visit[temp.first] = 1;
-
-		for(int i = 0; i < N; ++i){
-			if(visit[i] != 0)
+	for(int i = 0; i < 5; ++i){
+		for(int j = 0; j < 5; ++j){
+			if(visit[i][j] != 0)
 				continue;
+			vector<pair<int,int>> node;
+			int num =  board[i][j];
+			visit[i][j] = 1;
 
-			if(cost[s][i] < temp.second + cost[temp.first][i])
-				continue;
+			node.push_back({i,j});
 
-			cost[s][i] = temp.second + cost[temp.first][i];
+			for(int a = 0; a < node.size(); ++a){
+				pair<int,int> pos = node[a];
 
-			pq.push({i, cost[s][i]});
-		}
-	}
+				for(int k = 0; k < 4; ++k){
+					int ny = pos.first + dy[k];
+					int nx = pos.second + dx[k];
 
-	return 0;
-}
+					if(ny < 0 || nx < 0 || ny >= 5 || nx >= 5)
+						continue;
 
-int make_trip(void){
-	Trip t;
-	cin >> t.id >> t.revenue >> t.dest;
-
-	lst[t.id] = 1;
-	t.benefit = t.revenue - cost[S][t.dest];
-
-	pq.push(t);
-
-	return 0;
-}
-
-int cancel_trip(void){
-	int id;
-	cin >> id;
-	lst[id] = 0;
-	return 0;
-}
-
-int sell_trip(void){
-	if(pq.empty())
-		return -1;
-
-	int id = -1;
-
-	while(!pq.empty()){
-		if(pq.top().benefit < 0)
-			break;
-
-		if(lst[pq.top().id] == 0){
-			pq.pop();
-			continue;
-		}
-
-		id = pq.top().id;
-		pq.pop();
-
-		break;
-	}
-
-	return id;
-}
-
-int change_trip(void){
-	priority_queue<Trip> nq;
-	cin >> S;
-	cal_cost(S);
-	swap(nq, pq);
-
-	while(!nq.empty()){
-		Trip t = nq.top();
-		nq.pop();
-		
-		if(lst[t.id] == 0)
-			continue;
+					if(visit[ny][nx] != 0 || board[ny][nx] != num)
+						continue;
 	
-		t.benefit = t.revenue - cost[S][t.dest];
-		pq.push(t);
+					visit[ny][nx] = 1;
+
+					node.push_back({ny,nx});
+				}
+			}
+
+			if(node.size() >= 3){
+				ret += node.size();
+	
+				for(int a = 0; a < node.size(); ++a){
+					board[node[a].first][node[a].second] = 0;
+				}
+			}
+		}
 	}
 
+	return ret;
+}
+
+int turn_right(int board[3][3]){
+	int temp[3][3];
+
+	for(int i = 0; i < 3; ++i){
+		for(int j = 0; j < 3; ++j){
+			temp[i][j] = board[2-j][i];
+		}
+	}
+
+	copy(&temp[0][0], &temp[0][0] + 9, &board[0][0]);
+
 	return 0;
+}
+
+int turn_board(int board[5][5], pair<int,int> p, int d){
+	int temp[3][3];
+
+
+	for(int i = -1; i <= 1; ++i){
+		for(int j = -1; j <= 1; ++j){
+			temp[i+1][j+1] = board[p.first + i][p.second + j];
+		}
+	}
+
+	while(d-- >= 0){
+		turn_right(temp);
+	}
+
+	for(int i = -1; i <= 1; ++i){
+		for(int j = -1; j <= 1; ++j){
+			board[p.first + i][p.second +j] = temp[i+1][j+1];
+		}
+	}
+
+	return bfs(board);
+}
+
+int get_treasure(void){
+	
+	for(int j = 0; j < 5; ++j){
+		for(int i = 4; i >= 0; --i){
+			if(Board[i][j] == 0){
+				Board[i][j] = q.front();
+				q.pop();
+			}
+		}
+	}
+
+	return bfs(Board);
+}
+
+pair<pair<int,int>, int> cal_turn(void){
+	pair<pair<int,int>, int> ret;
+	int t_board[5][5];
+	int max = 0;
+
+	for(int d = 0; d < 3; ++d){
+		for(int i = 1; i < 4; ++i){
+			for(int j = 1; j < 4; ++j){
+				copy(&Board[0][0], &Board[0][0]+25, &t_board[0][0]);
+				int temp = turn_board(t_board, {j,i}, d);
+
+				if(temp > max){
+					max = temp;
+					ret = {{j,i}, d};
+				}
+			}
+		}
+	}
+
+	return ret;
 }
 
 int main(void){
-	//cin.tie(NULL);
-	//cout.tie(NULL);
-	//ios_base::sync_with_stdio(false);
+	int K,M;
 
-	int Q;
-	int op;
-	cin >> Q;
-	cin >> op >> N >> M;
+	cin >> K >> M;
 
-	for(int i = 0; i < N; ++i){
-		for(int j = 0; j < N; ++j){
-			if(i == j)
-				continue;
-			cost[i][j] = INF;
+	for(int i = 0; i < 5; ++i){
+		for(int j = 0; j < 5; ++j){
+			cin >> Board[i][j];
 		}
 	}
-
+	
 	for(int i = 0; i < M; ++i){
-		int u,v,w;
-
-		cin >> u >> v >> w;
-
-		if(cost[u][v] <= w)
-			continue;
-
-		cost[u][v] = w;
-		cost[v][u] = w;
+		int t;
+		cin >> t;
+		q.push(t);
 	}
 
-	cal_cost(0);
+	while(--K >= 0){
+		pair<pair<int,int>, int> max_data = cal_turn();
 
-	while(--Q > 0){
-		cin >> op;
-		switch(op/100){
-			case 2:
-				make_trip();
-				break;
-			case 3:
-				cancel_trip();
-				break;
-			case 4:
-				cout << sell_trip() << endl;
-				break;
-			case 5:
-				change_trip();
-				break;
-		}
+		int ret = turn_board(Board, max_data.first, max_data.second);
+
+		if(ret == 0)
+			break;
+
+		int plus = 0;
+		
+		do{
+			plus = get_treasure();
+			ret += plus;
+		}while(plus != 0);
+
+		cout << ret << " ";
 	}
+
+	cout << endl;
 
 	return 0;
 }
